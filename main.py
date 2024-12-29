@@ -1,10 +1,9 @@
-import tkinter as tk
-import random
-from tkinter import Toplevel, Menu
 from tkinter import *
+from tkinter import ttk
+import random
 from PIL import *
 from PIL import Image, ImageTk
-
+from time import sleep
 teams = {
     'GERMANY' : 83, 'ARGENTINA': 83, 'BELGIUM': 82, 'ENGLAND': 84,
     'FRANCE': 83, 'PORTUGAL': 85, 'ITALY': 83, 'SPAIN': 84,
@@ -45,7 +44,7 @@ teams = {
     'INDONESIA': 60, 'PHILIPPINES': 54, 'VIETNAM': 59, 'MYANMAR': 56,
     'LAOS': 53, 'CAMBODIA': 50, 'BRUNEI': 48, 'TIMOR-LESTE': 46,
     'NORTH KOREA': 56, 'TAIWAN': 55, 'HONG KONG': 52, 'MACAU': 50,
-    'BOSNIA': 78, 'CENTRAL AFRICAN REP.': 62, 'CONGO': 63, 'CHINA': 68,
+    'BOSNIA': 78, 'CENTRAL AFRICAN REPUBLIC': 62, 'CONGO': 63, 'CHINA': 68,
     'COMOROS': 62, 'CUBA': 67, 'CHAD': 63, 'ALGERIA' : 75,  'CANADA' : 73,
     'GUATEMALA' : 71, 'HAITI' : 69, 'HONDURAS' : 71, 'LIBERIA' : 63, 'LIBYA' : 69,
     'MADAGASCAR' : 62, 'MONGOLIA' : 61
@@ -101,9 +100,104 @@ team2flg.image = flg0
 im = Image.open('ball.ico')
 photo = ImageTk.PhotoImage(im)
 root.wm_iconphoto(True, photo)
+auto_set1 = 0
+auto_set2 = 0
+winners = list()
+losers = list()
+team1g = list()
+team2g = list()
+dates = list()
+notes = list()
 
 
 # MATCH ENGINE
+def automat1():
+    global auto_set1
+    if auto_set1 == 1:
+        auto_set1 = 0
+        auto_slow_var.set("S")
+        auto.place(x=935, y=947)
+        auto.configure(state=ACTIVE)
+    elif auto_set1 == 0:
+        auto_set1 = 1
+        auto_slow_var.set("STOP")
+        auto.place(x=960, y=947)
+        auto.configure(state=DISABLED)
+        while auto_set1 == 1:
+            sim()
+            root.update()
+            sleep(0.5)
+            root.update()
+            sleep(0.5)
+            
+
+def automat2():
+    global auto_set2
+    if auto_set2 == 1:
+        auto_set2 = 0
+        auto_var.set("F")
+        auto_slow.configure(state=ACTIVE)
+    elif auto_set2 == 0:
+        auto_set2 = 1
+        auto_slow.configure(state=DISABLED)
+        auto_var.set("STOP")
+        while auto_set2 == 1:
+            sim()
+            root.update()
+
+def provide_history():
+    for item in cup_history.get_children():
+        cup_history.delete(item)
+    winners_rev = list(reversed(winners))
+    losers_rev = list(reversed(losers))
+    team1g_rev = list(reversed(team1g))
+    team2g_rev = list(reversed(team2g))
+    dates_rev = list(reversed(dates))
+    notes_rev = list(reversed(notes))
+    n = len(dates)
+    j = 0
+    while n != 0:
+        cup_history.insert(parent='',index='end',iid=j,text='',values=(dates_rev[j],winners_rev[j],losers_rev[j],team1g_rev[j]," - ",team2g_rev[j],notes_rev[j]))
+        j += 1
+        n += -1
+
+def team2wins():
+    winners.append(t2name)
+    losers.append(t1name)
+    team1g.append(gnum2)
+    team2g.append(gnum1)
+    dates.append(year)
+    notes.append("None")
+    provide_history()
+
+def team1wins():
+    winners.append(t1name)
+    losers.append(t2name)
+    team1g.append(gnum1)
+    team2g.append(gnum2)
+    dates.append(year)
+    notes.append("None")
+    provide_history()
+
+def team1pen():
+    winners.append(t1name)
+    losers.append(t2name)
+    team1g.append(gnum1)
+    team2g.append(gnum2)
+    dates.append(year)
+    notes.append(str(t1name) + " wins on penalties")
+    provide_history()
+
+def team2pen():
+    winners.append(t2name)
+    losers.append(t1name)
+    team1g.append(gnum2)
+    team2g.append(gnum1)
+    dates.append(year)
+    notes.append(str(t2name) + " wins on penalties")
+    provide_history()
+
+
 def matchsim():
     # TAKE TOP 8 TEAMS -- DRAWSEL USING RANKS
     # SELECT TWO RANDOM TEAMS
@@ -111,6 +205,10 @@ def matchsim():
     # COMPARE FRATING, ASSIGN GOALS [1-5] if clear victor, if not assign [0-5]
     # NORMALIZE SCORE
     # STATE VICTOR AND ASSIGN CUPWIN/LOSS
+    global t1name
+    global t2name
+    global gnum1
+    global gnum2
     sorted_teams = sorted(teams.items(), key=lambda x: x[1], reverse=True)
     best8 = sorted_teams[:10]
     team1 = random.choice(best8)
@@ -146,26 +244,33 @@ def matchsim():
               gnum2 += -4
             if gnum2 > gnum1:
                 promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t2name) + " WINS THE " + str(year) + " FIFA WORLD CUP!")
-                prompt.place(x=750, y=800)
-                world_cup_wins[team2[0]] += 1 
-                world_cup_loss[team1[0]] += 1 
+                prompt.place(x=700, y=860)
+                world_cup_wins[team2[0]] += 1
+                world_cup_loss[team1[0]] += 1
+                team2wins()
+
             elif gnum1 > gnum2:
                 promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t1name) + " WINS THE " + str(year) + " FIFA WORLD CUP!")
-                prompt.place(x=750, y=800)                
+                prompt.place(x=700, y=860)                
                 world_cup_wins[team1[0]] += 1
                 world_cup_loss[team2[0]] += 1
+                team1wins()
+
             else:
                 tieb = random.choice(drawsel)
                 if tieb == 1:
                      promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t1name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                     prompt.place(x=750, y=800)
+                     prompt.place(x=700, y=860)
                      world_cup_wins[team1[0]] += 1
                      world_cup_loss[team2[0]] += 1
+                     team1pen()
+
                 else:
                      promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t2name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                     prompt.place(x=750, y=800)                     
+                     prompt.place(x=700, y=860)                     
                      world_cup_wins[team2[0]] += 1
                      world_cup_loss[team1[0]] += 1
+                     team2pen()
                      
     elif fr2 > fr1:
             gnum2 = random.randint(0, 4)
@@ -185,28 +290,33 @@ def matchsim():
              gnum2 += -4
             if gnum2 > gnum1:
                 promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t2name) + " WINS THE " + str(year) + " FIFA WORLD CUP!")
-                prompt.place(x=750, y=800)
+                prompt.place(x=700, y=860)
                 world_cup_wins[team2[0]] += 1
                 world_cup_loss[team1[0]] += 1
-                
+                team2wins()
                 
             elif gnum1 > gnum2:
                 promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t1name) + " WINS THE " + str(year) + " FIFA WORLD CUP!")
-                prompt.place(x=750, y=800)
+                prompt.place(x=700, y=860)
                 world_cup_wins[team1[0]] += 1
                 world_cup_loss[team2[0]] += 1
+                team1wins()
+
             else:
                 tieb = random.choice(drawsel)
                 if tieb == 1:
                      promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t1name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                     prompt.place(x=750, y=800)
+                     prompt.place(x=700, y=860)
                      world_cup_wins[team1[0]] += 1
                      world_cup_loss[team2[0]] += 1
+                     team1pen()
+
                 else:
                      promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t2name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                     prompt.place(x=750, y=800)
+                     prompt.place(x=700, y=860)
                      world_cup_wins[team2[0]] += 1
                      world_cup_loss[team1[0]] += 1
+                     team2pen()
     else:
         gnum1 = random.randint(0, 5)
         gs = fr1 - fr2
@@ -218,22 +328,25 @@ def matchsim():
              gnum2 += -2
         if tieb == 1:
                  promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t1name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                 prompt.place(x=750, y=800)
+                 prompt.place(x=700, y=860)
                  world_cup_wins[team1[0]] += 1
                  world_cup_loss[team2[0]] += 1
+                 team1pen()
         else:
                  promptvar.set(str(t1name) + " " + str(gnum1) + " - " + str(gnum2) + " " + str(t2name) + ". " + str(t2name) + " WINS THE " + str(year) + " FIFA WORLD CUP on penalities.")
-                 prompt.place(x=750, y=800)
+                 prompt.place(x=700, y=860)
                  world_cup_wins[team2[0]] += 1
                  world_cup_loss[team1[0]] += 1
+                 team2pen()
+
     sorted_loss = sorted(world_cup_loss.items(), key=lambda x: x[1], reverse=True)
     sorted_wins = sorted(world_cup_wins.items(), key=lambda x: x[1], reverse=True)
     sorted_finals = sorted(world_cup_finals.items(), key=lambda x: x[1], reverse=True)
     losses = world_cup_loss[team]
     finals = world_cup_wins[team] + world_cup_loss[team]
-    sorted_leader20 = "\n".join([f"{rank+1}. {team}: Wins - {wins}" for rank, (team, wins) in enumerate(sorted_wins[:20])])
+    sorted_leader20 = "\n".join([f"{rank+1}. {team}: Wins - {wins}" for rank, (team, wins) in enumerate(sorted_wins[:40])])
     leader20var.set(sorted_leader20)
-    leader20.place(x=1600, y=141)
+    leader20.place(x=1550, y=141)
     sorted_leadertc1 = "\n".join([f"{rank+1}. {team}: Wins - {wins}" for rank, (team, wins) in enumerate(sorted_wins[:50])])
     sorted_leadertc2 = "\n".join([f"{rank+51}. {team}: Wins - {wins}" for rank, (team, wins) in enumerate(sorted_wins[51:101])])
     sorted_leadertc3 = "\n".join([f"{rank+101}. {team}: Wins - {wins}" for rank, (team, wins) in enumerate(sorted_wins[102:200])])
@@ -260,18 +373,49 @@ def matchsim():
     g1disp.place(x=680, y=400)
     g2dispvar.set(gnum2)
     g2disp.place(x=1280, y=400)
-    vers.place(x=970, y=175)
+    vers.place(x=940, y=175)
     n1dispvar.set(t1name)
     n2dispvar.set(t2name)
     n1disp.place(x=550, y=360)
     n2disp.place(x=1150, y=360)
-    
+
+def change1():
+    if auto_set1 == 0:
+        auto_slow_var.set("AUTO - SLOW")
+        auto.place(x=1015, y=947)
+
+def dischange1():
+    if auto_set1 == 0:
+        auto_slow_var.set("S")
+        auto.place(x=935, y=947)
+    elif auto_set1 == 0:
+        auto_slow_var.set("STOP")
+        auto.place(x=960, y=947)
+
+def OnButtonHover1(button):
+    button.bind("<Enter>", func=lambda e: change1())
+    button.bind("<Leave>", func=lambda e: dischange1())
+
+def change2():
+    if auto_set2 == 0:
+        auto_var.set("AUTO - FAST")    
+
+def dischange2():
+    if auto_set2 == 0:
+        auto_var.set("F")
+    elif auto_set2 == 1:
+        auto_var.set("STOP")
+
+def OnButtonHover2(button):
+    button.bind("<Enter>", func=lambda e: change2())
+    button.bind("<Leave>", func=lambda e: dischange2())
+
 
 # RANK
 def rankcol():
-    rc1.place(x=670, y=141)
-    rc2.place(x=920, y=141)
-    rc3.place(x=1170, y=141)
+    rc1.place(x=670, y=135)
+    rc2.place(x=920, y=135)
+    rc3.place(x=1170, y=135)
 # DYNGRW
 def growth():
     for team in teams:
@@ -281,7 +425,9 @@ def growth():
 def sim():
     global year
     subhead1.place(x = 120, y = 113)
-    subhead2.place(x = 1595, y = 113)
+    subhead2.place(x = 1540, y = 113)
+    history_label.place(x=900, y=500)
+    cup_history.place(x=500, y=550)
     year += 4
     yearvar.set(str(year) + " FIFA WORLD CUP")
     cup_year.place(x=825, y=40)
@@ -293,7 +439,7 @@ def sim():
         sorted_teams_str = "\n".join([f"{rank+1}. {team} [{rating}]" for rank, (team, rating) in enumerate(sorted_teams[:40])])
         sorted_teams_rc1 = "\n".join([f"{rank+1}. {team} [{rating}]" for rank, (team, rating) in enumerate(sorted_teams[:50])])
         sorted_teams_rc2 = "\n".join([f"{rank+51}. {team} [{rating}]" for rank, (team, rating) in enumerate(sorted_teams[51:101])])
-        sorted_teams_rc3 = "\n".join([f"{rank+101}. {team} [{rating}]" for rank, (team, rating) in enumerate(sorted_teams[101:200])])
+        sorted_teams_rc3 = "\n".join([f"{rank+101}. {team} [{rating}]" for rank, (team, rating) in enumerate(sorted_teams[102:200])])
         rc1var.set(sorted_teams_rc1)
         rc2var.set(sorted_teams_rc2)
         rc3var.set(sorted_teams_rc3)
@@ -337,6 +483,10 @@ def clear():
     vers.place_forget()
     n1disp.place_forget()
     n2disp.place_forget()
+    history_label.place_forget()
+    auto.place_forget()
+    auto_slow.place_forget()
+    cup_history.place_forget()
     
 
     
@@ -344,6 +494,8 @@ def clear():
 def SSim():
     clear()
     Simulate.place(x = 900, y = 900)
+    auto.place(x=935, y=947)
+    auto_slow.place(x=900, y=947)
     yearvar.set(str(year) + " FIFA WORLD CUP")
 # INT
 def cont():
@@ -356,10 +508,10 @@ def cont():
 def stat():
     clear()
     yearvar.set(" CUP STATISTICS ")
-    cup_year.place(x=825, y=40)
-    ts1.place(x=520, y=140)
-    ts2.place(x=860, y=140)
-    ts3.place(x=1200, y=140)
+    cup_year.place(x=860, y=40)
+    ts1.place(x=520, y=135)
+    ts2.place(x=860, y=135)
+    ts3.place(x=1200, y=135)
 
 Intro = Label(root, text= " Welcome to World Cup Simulator, a fun little tool used to predict future FIFA WORLD CUP results. Click CONTINUE to Proceed.", bg="Black", fg="White")
 Intro.place(x = 640, y = 500)
@@ -405,7 +557,7 @@ g1disp.place_forget()
 g2dispvar = StringVar()
 g2disp = Label(root, textvariable=g2dispvar, bg="Black", fg="White", font=dispfont)
 g2disp.place_forget()
-vers = Label(root, text="V.", bg="Black", fg="White", font=versfont)
+vers = Label(root, text="VS", bg="Black", fg="White", font=versfont)
 n1dispvar = StringVar()
 n2dispvar = StringVar()
 n1disp = Label(root, textvariable=n1dispvar, bg="Black", fg="White", font=nmdispfont, justify=LEFT)
@@ -413,10 +565,19 @@ n2disp = Label(root, textvariable=n2dispvar, bg="Black", fg="White", font=nmdisp
 n1disp.place_forget()
 n2disp.place_forget()
 
+history_label = Label(root, text="----------- H  I  S  T  O  R  Y -----------", bg="black", fg="White", justify=CENTER)
 
 Continue = Button(root, text= "CONTINUE", command= cont)
 Continue.place(x = 960, y = 540)
 Simulate = Button(root, text = "SIMULATE", command= sim, font= yearfont, bg="Yellow", fg="Black")
+auto_var = StringVar()
+auto_var.set("F")
+auto = Button(root, textvariable=auto_var, command=automat2, bg="dark orange", fg="white")
+auto_slow_var = StringVar()
+auto_slow_var.set("S")
+auto_slow = Button(root, textvariable=auto_slow_var, command=automat1, bg="dark green", fg="white")
+OnButtonHover1(auto_slow)
+OnButtonHover2(auto)
 
 Sim = Menu(menubar, tearoff=0)
 Sim.add_command(label="Sim", command=SSim)
@@ -428,6 +589,25 @@ App = Menu(menubar, tearoff=0)
 App.add_command(label="Save As")
 App.add_command(label="Quit", command=root.quit)
 
+cup_history = ttk.Treeview(root, height=14)
+cup_history['columns'] = ('year','winner','loser','g1','plc','g2','notes')
+cup_history.column("#0", width=0,  stretch=NO)
+cup_history.column("year",anchor=CENTER, width=100)
+cup_history.column("winner",anchor=CENTER,width=280)
+cup_history.column("g1",anchor=CENTER,width=45)
+cup_history.column("plc",anchor=CENTER,width=10)
+cup_history.column("g2",anchor=CENTER,width=45)
+cup_history.column("loser",anchor=CENTER,width=280)
+cup_history.column("notes",anchor=CENTER,width=240)
+cup_history.heading("#0",text="",anchor=CENTER)
+
+cup_history.heading("year",text="Year",anchor=CENTER)
+cup_history.heading("winner",text="Champion",anchor=CENTER)
+cup_history.heading("g1",text="S",anchor=E)
+cup_history.heading("plc",text="co",anchor=CENTER)
+cup_history.heading("g2",text="re",anchor=W)
+cup_history.heading("loser",text="Runner-Up",anchor=CENTER)
+cup_history.heading("notes", text="Notes",anchor=CENTER)
 
 sorted_loss = sorted(world_cup_loss.items(), key=lambda x: x[1], reverse=True)
 sorted_wins = sorted(world_cup_wins.items(), key=lambda x: x[1], reverse=True)
