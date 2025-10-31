@@ -9,6 +9,9 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import sys
 sys.setrecursionlimit(150000)
+centerx=0.62
+centery=0.5
+
 
 ### INITIALIZE COUNTRY DATA ###
 asia = country_data.asian_countries
@@ -17,6 +20,7 @@ europe = country_data.european_countries
 north_america = country_data.northamerican_countries
 oceania = country_data.oceanian_countries
 south_america = country_data.southamerican_countries
+
 sorted_asia = sorted(asia.items(), key=lambda item: item[1], reverse=True)
 sorted_africa = sorted(africa.items(), key=lambda item: item[1], reverse=True)
 sorted_europe = sorted(europe.items(), key=lambda item: item[1], reverse=True)
@@ -26,6 +30,7 @@ sorted_south_america = sorted(south_america.items(), key=lambda item: item[1], r
 world = {**asia, **africa, **europe, **north_america, **oceania, **south_america}
 ordered_world = sorted(world.items(), key=lambda item: item[1], reverse=True)
 sorted_teams_top = "\n".join([f"{rank+1}. {team} [{rating}]" for rank, (team, rating) in enumerate(ordered_world[:40])])
+
 goal_diff = {team: 0 for team in world}
 wins_no = {team: 0 for team in world}
 draws_no = {team: 0 for team in world}
@@ -48,14 +53,20 @@ root.iconphoto(False, icon)
 root.configure(bg='black')
 icon = PhotoImage(file="icon.png")
 root.iconphoto(False, icon)
+
 ### INITIALIZE BACKGROUND ###
-left_canvas = Canvas(root, bg='red', highlightthickness=0)
-right_canvas = Canvas(root, bg='blue', highlightthickness=0)
+left_canvas = Canvas(root, bg='black', highlightthickness=0)
+right_canvas = Canvas(root, bg='black', highlightthickness=0)
 center_canvas = Canvas(root, bg='black', highlightthickness=0)
 left_canvas.pack(side=LEFT, fill=BOTH, expand=FALSE)
 right_canvas.pack(side=RIGHT, fill=BOTH, expand=FALSE)
 center_canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
 
+qualified_map = Image.open("qualified.png")
+qualified_map = qualified_map.resize((900, 470), Image.LANCZOS)
+qualified_map_photo = ImageTk.PhotoImage(qualified_map)
+qualified_map_label = Label(root, image=qualified_map_photo, bg='black')
+qualified_map_label.image = qualified_map_photo
 ### INITIALIZE IMAGES ###
 win_cup = Image.open("misc/world_cup.png")
 win_cup = win_cup.resize((80, 152), Image.LANCZOS)
@@ -78,6 +89,7 @@ bronze_label = Label(root, image='')
 
 team1_flag_label = Label(root, image='')
 team2_flag_label = Label(root, image='')
+  
 ### INITIALIZE MISC ###
 team_growth_by = range(-100, 100)
 year = 2022
@@ -120,19 +132,12 @@ group12 = list()
 groups = [group1, group2, group3, group4, group5, group6, group7, group8, group9, group10, group11, group12]
 ### INITIALIZE FUNCTIONS ###
 
-pygame.init()
-pygame.mixer.music.load("background.wav")
-pygame.mixer.music.play(-1)
-button_sound = pygame.mixer.Sound("click.mp3")
-
 def on_closing():
     if messagebox.askokcancel("Quit", "Do you really want to quit?"):
         root.destroy()
 
 root.bind("<Escape>", lambda e: on_closing())     
 
-def click_sound():
-    button_sound.play()
 
 def callback(url):
     webbrowser.open_new(url)
@@ -140,7 +145,7 @@ def callback(url):
 def initialize():
     global menu_state
     hide_elements()
-    click_sound()
+    
     topteams_label.place(relx=0.5, rely=0.05, anchor=N)
     progress_button.place(relx=0.60, rely=0.9, anchor=CENTER)
     intro_credits.place(relx=0.9, rely=0.9, anchor=CENTER)
@@ -152,14 +157,14 @@ def initialize():
     
 def about():
     hide_elements()
-    click_sound()
+    
     about_label.place(relx=0.5, rely=0.2, anchor=CENTER)
     back_button.place(relx=0.5, rely=0.5, anchor=CENTER)
     intro_credits.place(relx=0.9, rely=0.9, anchor=CENTER)
 
 def settings():
     hide_elements()
-    click_sound()
+    
     back_button.place(relx=0.62, rely=0.9, anchor=CENTER)
     attack_factor_slider.place(relx=0.5, rely=0.1, anchor=CENTER)
     defense_factor_slider.place(relx=0.5, rely=0.2, anchor=CENTER)
@@ -170,7 +175,7 @@ def settings():
     set_factor_button.place(relx=0.5, rely=0.5, anchor=CENTER)
 
 def set_factors():
-    click_sound()
+    
     import match_engine
     global af, df, sim_speed
     af = attack_factor_slider.get()
@@ -180,7 +185,7 @@ def set_factors():
     match_engine.set_factors(af, df)
 
 def back_menu():
-    click_sound()
+    
     global menu_state
     hide_elements()
     if menu_state == 0:
@@ -322,19 +327,20 @@ def hide_elements():
     team2_flag_label.place_forget()
     match_stats.place_forget()
     treev.place_forget()
-    verscrlbar.place_forget()
     sim_speed_slider.place_forget()
     sim_speed_label.place_forget()
     podiumstat1_label.place_forget()
     podiumstat2_label.place_forget()
     podiumstat3_label.place_forget()
     match_prompt_label.place_forget()
-    
+    qualified_map_label.place_forget()
            
 def get_qualified_teams():
-    click_sound()
+    import generate_map
+    stage_name = "Teams that Qualifed for the World Cup"
+    stage_var.set(stage_name)
     ### AFC=10/12, CAF=10/13, CONCACAF=4/5, CONMEBOL=7/8, OFC=1/2, UEFA=16/20
-    global sorted_qualified_teams, sorted_asia, sorted_africa, sorted_europe, sorted_north_america, sorted_oceania, sorted_south_america, appearances
+    global sorted_qualified_teams, sorted_asia, sorted_africa, sorted_europe, sorted_north_america, sorted_oceania, sorted_south_america, appearances, qualified_map_label
     potential_asia = sorted_asia[:12]
     potential_africa = sorted_africa[:13]
     potential_europe = sorted_europe[:20]
@@ -360,16 +366,25 @@ def get_qualified_teams():
                                         (sorted(qualified_teams, key=lambda item: item[1], reverse=True)[24:])])
     sorted_qualified_teams = sorted(qualified_teams, key=lambda item: item[1], reverse=True)
     qualified_teams_var1.set(sorted_qualified_teams1)
-    qualified_teams_label1.place(relx=0.4, rely=0.3, anchor=N)
+    qualified_teams_label1.place(relx=0.6, rely=0.3, anchor=N)
     qualified_teams_var2.set(sorted_qualified_teams2)
-    qualified_teams_label2.place(relx=0.6, rely=0.3, anchor=N)
+    qualified_teams_label2.place(relx=0.8, rely=0.3, anchor=N)
     for country in qualified_teams:
         appearances[country[0]] += 1
+    countries = [country for country, rating in qualified_teams]
+    genmap_map_path = generate_map.generate_map(countries)
+    qualified_map = Image.open(genmap_map_path)
+    qualified_map = qualified_map.resize((900, 470), Image.LANCZOS)
+    qualified_map_photo = ImageTk.PhotoImage(qualified_map)
+    qualified_map_label = Label(root, image=qualified_map_photo, bg='black')
+    qualified_map_label.image = qualified_map_photo
+    qualified_map_label.place(relx=0.25, rely=0.5, anchor=CENTER)
     pot_button.place(relx=0.62, rely=0.9, anchor=CENTER)
     eternal_sim_callback()
 
 def show_rankings():
-    click_sound()
+    stage_name = "Current World Rankings"
+    stage_var.set(stage_name)
     hide_elements()
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     back_button.place(relx=0.62, rely=0.9, anchor=CENTER)
@@ -400,7 +415,7 @@ def team_growth():
     stage_label.place(relx=0.6, rely=0.01, anchor=CENTER)
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     progress_button.place(relx=0.60, rely=0.9, anchor=CENTER)
-    click_sound()
+    
     global cycle_count, year, world, ordered_world, sorted_teams_top, asia, europe, africa, north_america, oceania, south_america
     global esim_toggle, sorted_africa, sorted_asia, sorted_europe, sorted_north_america, sorted_oceania, sorted_south_america, rank
     if cycle_count == 1:
@@ -448,7 +463,8 @@ def team_growth():
 def draw_pots():
     global pot1, pot2, pot3, pot4, menu_state
     hide_elements()
-    click_sound()
+    stage_name = "Drawing Pots"
+    stage_var.set(stage_name)
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     stage_label.place(relx=0.6, rely=0.01, anchor=CENTER)
     pot1_display.place(relx=0.12, rely=0.22, anchor=CENTER)
@@ -476,7 +492,7 @@ def draw_pots():
 def draw_groups_init():
     global menu_state
     hide_elements()
-    click_sound()
+    
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     stage_label.place(relx=0.6, rely=0.01, anchor=CENTER)
     group1_display.place(relx=0.01, rely=0.07, anchor=NW)
@@ -503,10 +519,10 @@ def draw_groups_init():
 
 def draw_groups():
     import match_sequence
-    click_sound()
+    
     global key, stage_name, match_count, pot1, pot2, pot3, pot4, draw_count, menu_state, group, group1, group2, group3, group4, group5, group6, group7, group8, group9, group10, group11, group12
     local_hold = ""
-    stage_name = "Group Stage"
+    stage_name = "Drawing Groups"
     stage_var.set(stage_name)
     if draw_count == 0:
         for i in pot1_display.get_children():
@@ -630,22 +646,19 @@ def draw_groups():
         draw_count = 0
         (group1[0])
         match_sequence.draw_matches(group1, group2, group3, group4, group5, group6, group7, group8, group9, group10, group11, group12)
-    
-    key = 0
-    match_count = 1
-    sim_setup()
-    menu_state = 4 
+        key = 0
+        match_count = 1
+        sim_setup()
+        menu_state = 4 
 
 def sim_setup():
-    click_sound()
     import match_sequence
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     global team1rating, team2rating, match_count, team1_flag_label, team2_flag_label
     match_sequence.parse_data()
     match_stats.place_forget()
     treev.place_forget()
-    verscrlbar.place_forget()
     t1name_var.set(match_sequence.t1name)
     t2name_var.set(match_sequence.t2name)
     team1rating = int(match_sequence.tr1)
@@ -655,10 +668,10 @@ def sim_setup():
     (team1rating)
     (team2rating)
     team1_flag = Image.open(f"flags/{match_sequence.t1name}.png")
-    team1_flag = team1_flag.resize((250, 125), Image.LANCZOS)
+    team1_flag = team1_flag.resize((320, 160), Image.LANCZOS)
     team1_flag = ImageTk.PhotoImage(team1_flag)
     team2_flag = Image.open(f"flags/{match_sequence.t2name}.png")
-    team2_flag = team2_flag.resize((250, 125), Image.LANCZOS)
+    team2_flag = team2_flag.resize((320, 160), Image.LANCZOS)
     team2_flag = ImageTk.PhotoImage(team2_flag)
     team1_flag_label.configure(image=team1_flag, bg='black')
     team2_flag_label.configure(image=team2_flag, bg='black')
@@ -678,6 +691,8 @@ def sim_state():
     global sim_cycle, match_count, stage_name
     if sim_cycle == 0:
         if stage_name == "Group Stage":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             group1_display.place(relx=0.01, rely=0.07, anchor=NW)
@@ -692,8 +707,10 @@ def sim_state():
             group10_display.place(relx=0.99, rely=0.52, anchor=NE)
             group11_display.place(relx=0.99, rely=0.67, anchor=NE)
             group12_display.place(relx=0.99, rely=0.82, anchor=NE)
-            sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
+            sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
         elif stage_name == "Round of 32":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko_node_1.place(relx=0.005, rely=0.05, anchor=W)
@@ -713,6 +730,8 @@ def sim_state():
             ko_node_14.place(relx=0.995, rely=0.818, anchor=E)
             ko_node_16.place(relx=0.995, rely=0.95, anchor=E)
         elif stage_name == "Round of 16":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko16_node1.place(relx=0.005, rely=0.05, anchor=W)
@@ -724,6 +743,8 @@ def sim_state():
             ko16_node6.place(relx=0.995, rely=0.67, anchor=E)
             ko16_node8.place(relx=0.995, rely=0.95, anchor=E)
         elif stage_name == "Quarterfinals":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko8_node1.place(relx=0.005, rely=0.05, anchor=W)
@@ -731,11 +752,15 @@ def sim_state():
             ko8_node2.place(relx=0.995, rely=0.05, anchor=E)
             ko8_node4.place(relx=0.995, rely=0.36, anchor=E)
         elif stage_name == "Semifinals":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko4_node1.place(relx=0.005, rely=0.05, anchor=W)
             ko4_node2.place(relx=0.995, rely=0.05, anchor=E)
         elif stage_name == "Final":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             knf_node0.place(relx=0.005, rely=0.05, anchor=W)
@@ -743,6 +768,8 @@ def sim_state():
             
     elif sim_cycle == 1:
         if stage_name == "Group Stage":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             group1_display.place(relx=0.01, rely=0.07, anchor=NW)
@@ -757,10 +784,12 @@ def sim_state():
             group10_display.place(relx=0.99, rely=0.52, anchor=NE)
             group11_display.place(relx=0.99, rely=0.67, anchor=NE)
             group12_display.place(relx=0.99, rely=0.82, anchor=NE)
-            sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
+            sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
             team1goal_display.place(relx=0.35, rely=0.55, anchor=CENTER)
             team2goal_display.place(relx=0.65, rely=0.55, anchor=CENTER)
         elif stage_name == "Round of 32":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko_node_1.place(relx=0.005, rely=0.05, anchor=W)
@@ -782,6 +811,8 @@ def sim_state():
             team1goal_display.place(relx=0.35, rely=0.55, anchor=CENTER)
             team2goal_display.place(relx=0.65, rely=0.55, anchor=CENTER)
         elif stage_name == "Round of 16":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko16_node1.place(relx=0.005, rely=0.05, anchor=W)
@@ -795,6 +826,8 @@ def sim_state():
             team1goal_display.place(relx=0.35, rely=0.55, anchor=CENTER)
             team2goal_display.place(relx=0.65, rely=0.55, anchor=CENTER)
         elif stage_name == "Quarterfinals":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko8_node1.place(relx=0.005, rely=0.205, anchor=W)
@@ -804,6 +837,8 @@ def sim_state():
             team1goal_display.place(relx=0.35, rely=0.55, anchor=CENTER)
             team2goal_display.place(relx=0.65, rely=0.55, anchor=CENTER)
         elif stage_name == "Semifinals":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             ko4_node1.place(relx=0.005, rely=0.5, anchor=W)
@@ -811,6 +846,9 @@ def sim_state():
             team1goal_display.place(relx=0.35, rely=0.55, anchor=CENTER)
             team2goal_display.place(relx=0.65, rely=0.55, anchor=CENTER)
         elif stage_name == "Final":
+            stage_var.set(stage_name)
+            sim_gstage_button_var.set("Skip " + str(stage_name))
+            sim_gstage_button_var.set("Skip " + str(stage_name))
             t1name.place(relx=0.35, rely=0.45, anchor=CENTER)
             t2name.place(relx=0.65, rely=0.45, anchor=CENTER)
             knf_node0.place(relx=0.005, rely=0.5, anchor=W)
@@ -902,7 +940,6 @@ def simulate():
         team2goal_display.place_forget()
         match_stats.place_forget()
         treev.place_forget()
-        verscrlbar.place_forget()
         match_prompt_label.place_forget()
         for i in match_stats.get_children():
             match_stats.delete(i)
@@ -913,10 +950,10 @@ def simulate():
         team1rating = int(match_sequence.tr1)
         team2rating = int(match_sequence.tr2)
         team1_flag = Image.open(f"flags/{match_sequence.t1name}.png")
-        team1_flag = team1_flag.resize((250, 125), Image.LANCZOS)
+        team1_flag = team1_flag.resize((360, 160), Image.LANCZOS)
         team1_flag = ImageTk.PhotoImage(team1_flag)
         team2_flag = Image.open(f"flags/{match_sequence.t2name}.png")
-        team2_flag = team2_flag.resize((250, 125), Image.LANCZOS)
+        team2_flag = team2_flag.resize((360, 160), Image.LANCZOS)
         team2_flag = ImageTk.PhotoImage(team2_flag)
         team1_flag_label.configure(image=team1_flag, bg='black')
         team2_flag_label.configure(image=team2_flag, bg='black')
@@ -933,13 +970,12 @@ def simulate():
             sim_gstage_verify()
 
 def sim_result(team1score, team2score):
-    click_sound()
+    
     root.update()
     import match_sequence
     import match_engine
     match_stats.place(relx=0.63, rely=0.7, anchor=CENTER)
     treev.place(relx = 0.36, rely = 0.8, anchor = CENTER)
-    verscrlbar.place(relx=0.4727, rely=0.8, anchor = CENTER, relheight=0.379)
     match_stats.insert("", "end", values=(team1score,"Goals Scored", team2score))
     match_stats.insert("", "end", values=(match_engine.t1shots, "Shots Taken", match_engine.t2shots))
     match_stats.insert("", "end", values=(match_engine.xg1, "xG (Predicted)", match_engine.xg2))
@@ -1023,9 +1059,9 @@ def init_knockouts():
     
     stage_name = "Round of 32"
     stage_var.set(stage_name)
+    sim_gstage_button_var.set("Skip " + str(stage_name))
     temp_match_sequence = match_sequence.match_sequence_list
     
-    (temp_match_sequence)
     hide_elements()
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     stage_label.place(relx=0.6, rely=0.01, anchor=CENTER)
@@ -1053,8 +1089,8 @@ def init_knockouts():
         local_n += 2
     
     match_count = 74
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     sim_setup()
         
 def sim_gstage():
@@ -1095,7 +1131,6 @@ def knockresult(team1score, team2score, yespen):
     (str(match_sequence.t1name) + " = " + str(team1score)  + " | " + str(match_sequence.t2name) + " = " + str(team2score) + " | Yespen is " + str(yespen))
     match_stats.place(relx=0.63, rely=0.7, anchor=CENTER)
     treev.place(relx = 0.36, rely = 0.8, anchor = CENTER)
-    verscrlbar.place(relx=0.4727, rely=0.8, anchor = CENTER, relheight=0.379)
     match_stats.insert("", "end", values=(match_engine.t1shots, "Shots Taken", match_engine.t2shots))
     match_stats.insert("", "end", values=(match_engine.xg1, "xG (Predicted)", match_engine.xg2))
     match_stats.insert("", "end", values=(match_engine.possesion1, "possession", match_engine.possesion2))
@@ -1135,7 +1170,6 @@ def knockresult(team1score, team2score, yespen):
         elif team1score < team2score:
             winners_knockout.append((match_sequence.t2name, int(match_sequence.tr2)))
             losers_knockout.append((match_sequence.t1name, int(match_sequence.tr1)))
-            (winners_knockout)
             match_prompt_var.set(str(match_sequence.t2name) + " BEATS " + str(match_sequence.t1name) + "  " + str(team2score) + " - " + str(team1score))
             for node in node_list:
                 if match_sequence.t2name in node.item(node.get_children()[0], "values"):
@@ -1165,7 +1199,6 @@ def knockresult(team1score, team2score, yespen):
             team2goal_display_var.set(team2score)
             winners_knockout.append((match_sequence.t1name, int(match_sequence.tr1)))
             losers_knockout.append((match_sequence.t2name, int(match_sequence.tr2)))
-            (winners_knockout)
             match_prompt_var.set(str(match_sequence.t1name) + " BEATS " + str(match_sequence.t2name) + " ON PENALTIES. ENDED  " + str(team1score) + " - " + str(team2score))
             for node in node_list:
                 if match_sequence.t1name in node.item(node.get_children()[0], "values"):
@@ -1192,7 +1225,6 @@ def knockresult(team1score, team2score, yespen):
             team2goal_display_var.set(team2score)
             winners_knockout.append((match_sequence.t2name, int(match_sequence.tr2)))
             losers_knockout.append((match_sequence.t1name, int(match_sequence.tr1)))
-            (winners_knockout)
             match_prompt_var.set(str(match_sequence.t2name) + " BEATS " + str(match_sequence.t1name) + " ON PENALTIES. ENDED  " + str(team2score) + " - " + str(team1score))
             for node in node_list:
                 if match_sequence.t2name in node.item(node.get_children()[0], "values"):
@@ -1220,10 +1252,10 @@ def init_knockouts16():
     import match_engine
     match_engine.clear_prompt()
     global match_count, stage_name, winners_knockout
-    ("delete losers2")
     losers_knockout.clear()
     stage_name = "Round of 16"
     stage_var.set(stage_name)
+    sim_gstage_button_var.set("Skip " + str(stage_name))
     match_sequence.draw_knockout_16(winners_knockout)
     temp_match_sequence = match_sequence.match_sequence_list
     (temp_match_sequence)
@@ -1264,8 +1296,8 @@ def init_knockouts16():
     ko16_node8.insert("", "end", values=(temp_match_sequence[15][0], 0))
     
     match_count = 91
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     sim_setup()
     
 def init_knockouts8():
@@ -1277,11 +1309,11 @@ def init_knockouts8():
     global stage_name, match_count, winners_knockout, losers_knockout
     stage_name = "Quarterfinals"
     stage_var.set(stage_name)
+    sim_gstage_button_var.set("Skip " + str(stage_name))
     import match_sequence
     match_sequence.draw_knockout_8(winners_knockout)
     losers_knockout.clear()
     temp_match_sequence = match_sequence.match_sequence_list
-    (temp_match_sequence)
     ko8_node1.place(relx=0.005, rely=0.205, anchor=W)
     ko8_node3.place(relx=0.005, rely=0.795, anchor=W)
     ko8_node2.place(relx=0.995, rely=0.205, anchor=E)
@@ -1300,8 +1332,8 @@ def init_knockouts8():
     ko8_node4.insert("", "end", values=(temp_match_sequence[7][0], 0))
     
     match_count = 100
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     sim_setup()
     
 def init_knockouts4():
@@ -1315,6 +1347,7 @@ def init_knockouts4():
     (losers_knockout)
     stage_name = "Semifinals"
     stage_var.set(stage_name)
+    sim_gstage_button_var.set("Skip " + str(stage_name))
     import match_sequence
     match_sequence.draw_knockout_4(winners_knockout)
     ("delete losers1")
@@ -1331,8 +1364,8 @@ def init_knockouts4():
     ko4_node2.insert("", "end", values=(temp_match_sequence[3][0], 0))
     
     match_count = 105
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     sim_setup()
     
 def init_finals():
@@ -1343,10 +1376,9 @@ def init_finals():
     year_label.place(relx=0.4, rely=0.01, anchor=CENTER)
     stage_label.place(relx=0.6, rely=0.01, anchor=CENTER)
     global stage_name, match_count, winners_knockout, losers_knockout
-    (winners_knockout)
-    (losers_knockout)
     stage_name = "Final"
     stage_var.set(stage_name)
+    sim_gstage_button_var.set("Skip " + str(stage_name))
     import match_sequence
     match_sequence.draw_finals(winners_knockout, losers_knockout)
     ("delete losers2")
@@ -1392,8 +1424,8 @@ def end_cycle():
     import match_sequence
     import team_data
     hide_elements()
-    sim_button.place(relx=0.62, rely=0.9, anchor=CENTER)
-    sim_gstage_button.place(relx=0.62, rely=0.95, anchor=N)
+    sim_button.place(relx=centerx, rely=0.9, anchor=CENTER)
+    sim_gstage_button.place(relx=centerx, rely=0.95, anchor=N)
     sim_button.place_forget()
     sim_gstage_button.place_forget()
     root.update()
@@ -1409,11 +1441,11 @@ def end_cycle():
     team3 = winners_knockout[0][0]
     team_data.podium_stats(team1, team2, team3)
     country_data.getfinalflag(team1, team2, team3)
-    podiumstat1_var.set(str(team1) + " Which is ranked " + str(team_data.rank1) + ". scored: " + str(team_data.latest_forgoals_team1) + " goals and conceded: " 
+    podiumstat1_var.set(str(team1) + " Which was ranked " + str(team_data.rank1) + ". scored: " + str(team_data.latest_forgoals_team1) + " goals and conceded: " 
                         + str(team_data.latest_againstgoals_team1) + " goals.")
-    podiumstat2_var.set(str(team2) + " Which is ranked " + str(team_data.rank2) + ". scored: " + str(team_data.latest_forgoals_team2) + " goals and conceded: " 
+    podiumstat2_var.set(str(team2) + " Which was ranked " + str(team_data.rank2) + ". scored: " + str(team_data.latest_forgoals_team2) + " goals and conceded: " 
                         + str(team_data.latest_againstgoals_team2) + " goals.")
-    podiumstat3_var.set(str(team3) + " Which is ranked " + str(team_data.rank3) + ". scored: " + str(team_data.latest_forgoals_team3) + " goals and conceded: " 
+    podiumstat3_var.set(str(team3) + " Which was ranked " + str(team_data.rank3) + ". scored: " + str(team_data.latest_forgoals_team3) + " goals and conceded: " 
                         + str(team_data.latest_againstgoals_team3) + " goals.")
     winner_team_var.set(team1)
     silver_team_var.set(team2)
@@ -1609,12 +1641,12 @@ menubar.add_command(label="Quit", command=root.destroy)
 
 #region SETTINGS
 af = 35
-df = 33
+df = 34
 
 attack_factor_slider = Scale(root, variable = af, from_=30, to=40, orient=HORIZONTAL, length=200, bg='black', fg='gold', font=("Verdana", 12))
 attack_factor_slider.set(35)
 defense_factor_slider = Scale(root, variable = df, from_=30, to=40, orient=HORIZONTAL, length=200, bg='black', fg='gold', font=("Verdana", 12))
-defense_factor_slider.set(33)
+defense_factor_slider.set(34)
 
 attack_factor_label = Label(root, text="Attack Factor:", bg="black", fg="gold", font=("Verdana", 12))
 defense_factor_label = Label(root, text="Defense Factor:", bg="black", fg="gold", font=("Verdana", 12))
@@ -1665,11 +1697,11 @@ about_label = Label(root, text="This is a simple World Cup Simulator made by @Wa
 
 year_var = StringVar()
 year_var.set(year)
-year_label = Label(root, textvariable=year_var, bg="black", fg="White", font=("Verdana", 16))
+year_label = Label(root, textvariable=year_var, bg="black", fg="White", font=("Verdana", 16, "bold"))
 
 stage_var = StringVar()
-stage_var.set("Group Stage")
-stage_label = Label(root, textvariable=stage_var, bg="black", fg="White", font=("Verdana", 16))
+stage_var.set("Top 40 Teams")
+stage_label = Label(root, textvariable=stage_var, bg="black", fg="White", font=("Verdana", 16, "bold"))
 
 progress_button_var = StringVar()
 progress_button_var.set("Progress")
@@ -1717,8 +1749,8 @@ t1name_var = StringVar()
 t1name_var.set("")
 t2name_var = StringVar()
 t2name_var.set("")
-t1name = Label(root, textvariable=t1name_var, bg="black", fg="White", font=("Verdana", 18))
-t2name = Label(root, textvariable=t2name_var, bg="black", fg="White", font=("Verdana", 18))
+t1name = Label(root, textvariable=t1name_var, bg="black", fg="White", font=("Verdana", 18, "bold"))
+t2name = Label(root, textvariable=t2name_var, bg="black", fg="White", font=("Verdana", 18, "bold" ))
 
 team1goal_display_var = StringVar()
 team2goal_display_var = StringVar()
@@ -2329,8 +2361,6 @@ match_prompt_var.set("--MATCH PROMPT--")
 match_life = ttk.Treeview(root, height=8)
 
 treev = ttk.Treeview(root, selectmode ='browse', height = 15)
-verscrlbar = ttk.Scrollbar(root, orient ="vertical", command = treev.yview)
-treev.configure(xscrollcommand = verscrlbar.set)
 treev["columns"] = ("1", "2", "3")
 treev['show'] = 'headings'
 treev.column("1", width = 40, anchor ='c')
